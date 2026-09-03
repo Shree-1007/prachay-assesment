@@ -6,6 +6,8 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
 import { CreateVoucher } from './pages/CreateVoucher';
 import { MyVouchers } from './pages/MyVouchers';
+import { VoucherDetails } from './pages/VoucherDetails';
+import { EditVoucher } from './pages/EditVoucher';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -35,6 +37,8 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="create" element={<CreateVoucher />} />
             <Route path="vouchers" element={<MyVouchers />} />
+            <Route path="vouchers/:id" element={<VoucherDetails />} />
+            <Route path="edit/:id" element={<EditVoucher />} />
           </Route>
           
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

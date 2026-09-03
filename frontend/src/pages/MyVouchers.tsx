@@ -40,6 +40,14 @@ export const MyVouchers: React.FC = () => {
     return <div className="p-8 text-destructive">Unauthorized: Only employees can access this view.</div>;
   }
 
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this draft?")) {
+      const updatedVouchers = vouchers.filter(v => v.id !== id);
+      setVouchers(updatedVouchers);
+      localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -94,10 +102,25 @@ export const MyVouchers: React.FC = () => {
                         {voucher.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right flex justify-end gap-2">
                       <Link to={`/dashboard/vouchers/${voucher.id}`}>
-                        <Button variant="ghost" size="sm" className="h-8">View</Button>
+                        <Button variant="outline" size="sm" className="h-8">View</Button>
                       </Link>
+                      {voucher.status === 'Draft' && (
+                        <>
+                          <Link to={`/dashboard/edit/${voucher.id}`}>
+                            <Button variant="secondary" size="sm" className="h-8">Edit</Button>
+                          </Link>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="h-8"
+                            onClick={() => handleDelete(voucher.id)}
+                          >
+                            Delete
+                          </Button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
