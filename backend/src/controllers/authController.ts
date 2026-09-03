@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { query } from '../config/db';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 export const login = async (req: Request, res: Response) => {
