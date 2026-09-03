@@ -38,11 +38,15 @@ export const MyVouchers: React.FC = () => {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this draft?")) {
-      const updatedVouchers = vouchers.filter(v => v.id !== id);
-      setVouchers(updatedVouchers);
-      localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
+      try {
+        const api = await import('../services/mockApi');
+        await api.deleteVoucher(id);
+        setVouchers(vouchers.filter(v => v.id !== id));
+      } catch (err: any) {
+        alert(err.message);
+      }
     }
   };
 

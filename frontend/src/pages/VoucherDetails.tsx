@@ -56,24 +56,20 @@ export const VoucherDetails: React.FC = () => {
       updatedVoucher.rejectionReason = rejectionReason;
     }
 
-    // In a real app we would upload the signature file here.
-    
-    // Using mockApi save logic (which updates if id is present)
-    // Wait, saveVoucher needs the full voucher object or it will overwrite with empty?
-    // Let's import saveVoucher and use it
-    
-    // Oh, saveVoucher does a partial update based on ID in our mockApi.ts
-    // Let's add saveVoucher to our imports
-    
-    await import('../services/mockApi').then(m => m.saveVoucher(updatedVoucher));
-    
-    // Re-fetch to update view
-    const allVouchers = await getVouchers();
-    const found = allVouchers.find(v => v.id === id);
-    if(found) setVoucher(found);
-    
-    alert(`Voucher ${newStatus}!`);
-    navigate('/dashboard/pending');
+    try {
+      const api = await import('../services/mockApi');
+      await api.reviewVoucher(voucher.id, newStatus, updatedVoucher.rejectionReason || '', signature || undefined);
+      
+      // Re-fetch to update view
+      const allVouchers = await getVouchers();
+      const found = allVouchers.find(v => v.id === id);
+      if(found) setVoucher(found);
+      
+      alert(`Voucher ${newStatus}!`);
+      navigate('/dashboard/pending');
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   if (!voucher) return <div className="p-8">Loading or Not Found...</div>;

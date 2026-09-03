@@ -62,8 +62,12 @@ export const EditVoucher: React.FC = () => {
       status: status,
     };
 
-    await saveVoucher(updatedVoucher);
-    navigate('/dashboard/vouchers');
+    try {
+      await saveVoucher(updatedVoucher, signature || undefined);
+      navigate('/dashboard/vouchers');
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   if (user?.role !== 'employee') {

@@ -1,5 +1,3 @@
-// Mock API for Frontend Development
-
 export type Role = 'employee' | 'director' | 'accounts';
 
 export interface User {
@@ -7,12 +5,13 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  signature_url?: string;
 }
 
 export type VoucherStatus = 'Draft' | 'Submitted' | 'Pending Approval' | 'Approved' | 'Rejected';
 
 export interface Voucher {
-  id: string;
+  id: string; 
   voucherNumber: string;
   voucherDate: string;
   expenseDate: string;
@@ -30,57 +29,132 @@ export interface Voucher {
   updatedAt: string;
 }
 
-// Initial mock users
-const MOCK_USERS: User[] = [
-  { id: 1, name: 'Alice Employee', email: 'employee@test.com', role: 'employee' },
-  { id: 2, name: 'Bob Director', email: 'director@test.com', role: 'director' },
-  { id: 3, name: 'Charlie Accounts', email: 'accounts@test.com', role: 'accounts' }
-];
+const API_URL = 'http://localhost:5000/api';
 
-export const mockLogin = async (email: string): Promise<User | null> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const user = MOCK_USERS.find(u => u.email === email);
-      resolve(user || null);
-    }, 500); // simulate network delay
-  });
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
+
+const toCamel = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toCamel);
+  const camelObj: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+      camelObj[camelKey] = toCamel(obj[key]);
+    }
+  }
+  return camelObj;
+};
+
+const toSnake = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toSnake);
+  const snakeObj: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+      snakeObj[snakeKey] = toSnake(obj[key]);
+    }
+  }
+  return snakeObj;
+};
+
+export const mockLogin = async (email: string, password: string = 'password123'): Promise<User | null> => {
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) throw new Error('Login failed');
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    return toCamel(data.user);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 };
 
 export const getVouchers = async (): Promise<Voucher[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const data = localStorage.getItem('vouchers');
-      resolve(data ? JSON.parse(data) : []);
-    }, 300);
-  });
+  const res = await fetch(`${API_URL}/vouchers`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch vouchers');
+  const data = await res.json();
+  return toCamel(data);
 };
 
-export const saveVoucher = async (voucher: Partial<Voucher>): Promise<Voucher> => {
-  return new Promise((resolve) => {
-    setTimeout(async () => {
-      const vouchers = await getVouchers();
-      if (voucher.id) {
-        // Update
-        const index = vouchers.findIndex(v => v.id === voucher.id);
-        if (index > -1) {
-          vouchers[index] = { ...vouchers[index], ...voucher, updatedAt: new Date().toISOString() } as Voucher;
-          localStorage.setItem('vouchers', JSON.stringify(vouchers));
-          resolve(vouchers[index]);
-          return;
-        }
-      }
-      // Create
-      const newVoucher: Voucher = {
-        ...voucher,
-        id: Math.random().toString(36).substr(2, 9),
-        voucherNumber: `VCH-${Math.floor(Math.random() * 10000)}`,
-        status: voucher.status || 'Draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as Voucher;
-      vouchers.push(newVoucher);
-      localStorage.setItem('vouchers', JSON.stringify(vouchers));
-      resolve(newVoucher);
-    }, 300);
+export const getVoucherById = async (id: string): Promise<Voucher> => {
+  const res = await fetch(`${API_URL}/vouchers/${id}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch voucher');
+  const data = await res.json();
+  return toCamel(data);
+};
+
+export const saveVoucher = async (voucher: Partial<Voucher>, signatureFile?: File): Promise<Voucher> => {
+  const token = localStorage.getItem('token');
+  const method = voucher.id ? 'PUT' : 'POST';
+  const url = voucher.id ? `${API_URL}/vouchers/${voucher.id}` : `${API_URL}/vouchers`;
+
+  const snakeVoucher = toSnake(voucher);
+  const formData = new FormData();
+  
+  for (const key in snakeVoucher) {
+    if (snakeVoucher[key] !== undefined && snakeVoucher[key] !== null) {
+      formData.append(key, snakeVoucher[key].toString());
+    }
+  }
+  
+  if (signatureFile) {
+    formData.append('signature', signatureFile);
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    body: formData
   });
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to save voucher');
+  }
+
+  const data = await res.json();
+  return toCamel(data);
+};
+
+export const deleteVoucher = async (id: string): Promise<void> => {
+  const res = await fetch(`${API_URL}/vouchers/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders()
+  });
+  if (!res.ok) throw new Error('Failed to delete voucher');
+};
+
+export const reviewVoucher = async (id: string, status: string, rejectionReason: string, signatureFile?: File): Promise<Voucher> => {
+  const token = localStorage.getItem('token');
+  const formData = new FormData();
+  formData.append('status', status);
+  if (rejectionReason) formData.append('rejection_reason', rejectionReason);
+  if (signatureFile) formData.append('signature', signatureFile);
+
+  const res = await fetch(`${API_URL}/vouchers/${id}/review`, {
+    method: 'POST',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    body: formData
+  });
+  
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to review voucher');
+  }
+  
+  const data = await res.json();
+  return toCamel(data);
 };

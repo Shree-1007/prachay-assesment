@@ -54,8 +54,12 @@ export const CreateVoucher: React.FC = () => {
       status: status,
     };
 
-    await saveVoucher(newVoucher);
-    navigate('/dashboard/vouchers');
+    try {
+      await saveVoucher(newVoucher, signature || undefined);
+      navigate('/dashboard/vouchers');
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   if (user?.role !== 'employee') {
