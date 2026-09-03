@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -10,7 +10,7 @@ import {
   PlusCircle,
   Menu
 } from 'lucide-react';
-import { Button } from './ui/Button';
+import { Button } from "../ui/Button";
 
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
