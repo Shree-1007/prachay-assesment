@@ -8,6 +8,7 @@ import { CreateVoucher } from './pages/CreateVoucher';
 import { MyVouchers } from './pages/MyVouchers';
 import { VoucherDetails } from './pages/VoucherDetails';
 import { EditVoucher } from './pages/EditVoucher';
+import { PendingApprovals } from './pages/PendingApprovals';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -39,6 +40,7 @@ function App() {
             <Route path="vouchers" element={<MyVouchers />} />
             <Route path="vouchers/:id" element={<VoucherDetails />} />
             <Route path="edit/:id" element={<EditVoucher />} />
+            <Route path="pending" element={<PendingApprovals />} />
           </Route>
           
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

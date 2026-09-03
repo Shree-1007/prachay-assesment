@@ -13,8 +13,10 @@ export const MyVouchers: React.FC = () => {
   useEffect(() => {
     const fetchVouchers = async () => {
       const data = await getVouchers();
-      // Employee only sees their own vouchers
-      const myData = data.filter(v => v.employeeId === user?.id);
+      // Employee sees only their own, others see all
+      const myData = user?.role === 'employee' 
+        ? data.filter(v => v.employeeId === user.id) 
+        : data;
       // Sort by newest first
       setVouchers(myData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       setIsLoading(false);
@@ -36,10 +38,6 @@ export const MyVouchers: React.FC = () => {
     }
   };
 
-  if (user?.role !== 'employee') {
-    return <div className="p-8 text-destructive">Unauthorized: Only employees can access this view.</div>;
-  }
-
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this draft?")) {
       const updatedVouchers = vouchers.filter(v => v.id !== id);
@@ -52,15 +50,23 @@ export const MyVouchers: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">My Vouchers</h1>
-          <p className="text-muted-foreground mt-2">Track the status of your expense reimbursement requests.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            {user?.role === 'employee' ? 'My Vouchers' : 'All Vouchers'}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {user?.role === 'employee' 
+              ? 'Track the status of your expense reimbursement requests.'
+              : 'View all expense reimbursement requests in the system.'}
+          </p>
         </div>
-        <Link to="/dashboard/create">
-          <Button className="flex items-center gap-2">
-            <PlusCircle size={16} />
-            Create New
-          </Button>
-        </Link>
+        {user?.role === 'employee' && (
+          <Link to="/dashboard/create">
+            <Button className="flex items-center gap-2">
+              <PlusCircle size={16} />
+              Create New
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">

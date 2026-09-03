@@ -9,6 +9,8 @@ export const VoucherDetails: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [voucher, setVoucher] = useState<Voucher | null>(null);
+  const [signature, setSignature] = useState<File | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   useEffect(() => {
     const fetchVoucher = async () => {
@@ -25,6 +27,54 @@ export const VoucherDetails: React.FC = () => {
     };
     fetchVoucher();
   }, [id, user]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSignature(e.target.files[0]);
+    }
+  };
+
+  const handleReview = async (newStatus: 'Approved' | 'Rejected') => {
+    if (!voucher) return;
+    
+    if (newStatus === 'Approved' && !signature) {
+      alert("Director signature is mandatory to approve the voucher.");
+      return;
+    }
+
+    if (newStatus === 'Rejected' && !rejectionReason.trim()) {
+      alert("A reason must be provided when rejecting a voucher.");
+      return;
+    }
+
+    const updatedVoucher: Partial<Voucher> = {
+      id: voucher.id,
+      status: newStatus,
+    };
+
+    if (newStatus === 'Rejected') {
+      updatedVoucher.rejectionReason = rejectionReason;
+    }
+
+    // In a real app we would upload the signature file here.
+    
+    // Using mockApi save logic (which updates if id is present)
+    // Wait, saveVoucher needs the full voucher object or it will overwrite with empty?
+    // Let's import saveVoucher and use it
+    
+    // Oh, saveVoucher does a partial update based on ID in our mockApi.ts
+    // Let's add saveVoucher to our imports
+    
+    await import('../services/mockApi').then(m => m.saveVoucher(updatedVoucher));
+    
+    // Re-fetch to update view
+    const allVouchers = await getVouchers();
+    const found = allVouchers.find(v => v.id === id);
+    if(found) setVoucher(found);
+    
+    alert(`Voucher ${newStatus}!`);
+    navigate('/dashboard/pending');
+  };
 
   if (!voucher) return <div className="p-8">Loading or Not Found...</div>;
 
@@ -88,6 +138,56 @@ export const VoucherDetails: React.FC = () => {
           <div className="mt-8 border-t border-border pt-6">
             <p className="text-sm font-semibold text-destructive">Rejection Reason</p>
             <p className="mt-2 text-sm text-destructive">{voucher.rejectionReason}</p>
+          </div>
+        )}
+
+        {/* Director Review Actions */}
+        {user?.role === 'director' && voucher.status === 'Submitted' && (
+          <div className="mt-8 border-t border-border pt-6 space-y-4">
+            <h3 className="text-lg font-medium">Director Review</h3>
+            
+            <div className="bg-muted/50 p-4 rounded-lg border border-border">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                <div>
+                  <label className="text-sm font-medium leading-none mb-1.5 block">Director Signature (Image) *</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                  />
+                  {!signature && <p className="text-xs text-muted-foreground mt-1">Signature is required to approve.</p>}
+                </div>
+                
+                <div className="flex flex-col space-y-1.5 w-full">
+                  <label className="text-sm font-medium leading-none">Rejection Reason *</label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={2}
+                    className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="Required if rejecting..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <Button 
+                  variant="primary" 
+                  onClick={() => handleReview('Approved')}
+                  className="w-32 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Approve
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => handleReview('Rejected')}
+                  className="w-32"
+                >
+                  Reject
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
