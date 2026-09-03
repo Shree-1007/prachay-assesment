@@ -23,12 +23,19 @@ app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/vouchers', voucherRoutes);
 
+import { initDb } from './config/db';
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Expense Voucher API is running' });
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const start = async () => {
+  await initDb();
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+};
+
+start();
