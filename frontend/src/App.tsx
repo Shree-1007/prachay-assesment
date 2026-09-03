@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/Dashboard';
+import { CreateVoucher } from './pages/CreateVoucher';
+import { MyVouchers } from './pages/MyVouchers';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -31,7 +33,8 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            {/* We will add more routes here like /dashboard/create, /dashboard/vouchers */}
+            <Route path="create" element={<CreateVoucher />} />
+            <Route path="vouchers" element={<MyVouchers />} />
           </Route>
           
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
